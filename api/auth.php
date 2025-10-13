@@ -27,6 +27,14 @@ switch ($action) {
         $authController->getProfile();
         break;
         
+    case 'students':
+        $authController->getStudents();
+        break;
+        
+    case 'teachers':
+        $authController->getTeachers();
+        break;
+        
     default:
         // Respuesta por defecto
         http_response_code(404);
@@ -36,7 +44,9 @@ switch ($action) {
             'available_endpoints' => [
                 'login' => BASE_URL . '/api/auth.php?action=login',
                 'register' => BASE_URL . '/api/auth.php?action=register',
-                'profile' => BASE_URL . '/api/auth.php?action=profile'
+                'profile' => BASE_URL . '/api/auth.php?action=profile',
+                'students' => BASE_URL . '/api/auth.php?action=students',
+                'teachers' => BASE_URL . '/api/auth.php?action=teachers'
             ]
         ], JSON_UNESCAPED_UNICODE);
         break;

@@ -22,55 +22,58 @@ controladores-api-flutter/
 
 ## ⚙️ Configuración
 
-### 1. Base de Datos
-- Importar el archivo `colegio_login_materias.sql` en tu base de datos
-- Configurar las credenciales en `config/database.php`
+### 1. Instalación
+```bash
+# Clonar el repositorio
+git clone https://github.com/Jordan-dito/Sistema-notas-y-asistencia-app.git
+cd Sistema-notas-y-asistencia-app
 
-### 2. Configuración Local vs Hosting
+# Copiar archivo de configuración
+cp .env.example .env
+```
+
+### 2. Configuración con Variables de Entorno (.env)
 
 #### Para Local (XAMPP/WAMP):
-```php
-// En config/database.php
-$environment = 'local';
-$base_path = '/controladores-api-flutter'; // Ajustar según tu carpeta
+```env
+ENVIRONMENT=local
+DB_HOST_LOCAL=localhost
+DB_NAME_LOCAL=colegio_db
+DB_USER_LOCAL=root
+DB_PASS_LOCAL=
+DB_CHARSET_LOCAL=utf8mb4
+BASE_PATH_LOCAL=/controladores api flutter
+DOMAIN_LOCAL=localhost
 ```
 
 #### Para Hosting:
-```php
-// En config/database.php
-$environment = 'hosting';
-$base_path = ''; // Usualmente la raíz del dominio
+```env
+ENVIRONMENT=hosting
+DB_HOST_HOSTING=localhost
+DB_NAME_HOSTING=tu_base_datos_hosting
+DB_USER_HOSTING=tu_usuario_hosting
+DB_PASS_HOSTING=tu_password_hosting
+DB_CHARSET_HOSTING=utf8mb4
+BASE_PATH_HOSTING=
+DOMAIN_HOSTING=tu-dominio.com
 ```
 
-### 3. Configuración de Base de Datos
+### 3. Base de Datos
+- Importar el archivo `colegio_login_materias.sql` en tu base de datos
+- Las credenciales se configuran automáticamente desde el archivo `.env`
 
-#### Local:
-```php
-'local' => [
-    'host' => 'localhost',
-    'dbname' => 'colegio_db',
-    'username' => 'root',
-    'password' => '',
-    'charset' => 'utf8mb4'
-]
-```
-
-#### Hosting:
-```php
-'hosting' => [
-    'host' => 'localhost', // o IP del servidor
-    'dbname' => 'tu_base_datos_hosting',
-    'username' => 'tu_usuario_hosting',
-    'password' => 'tu_password_hosting',
-    'charset' => 'utf8mb4'
-]
-```
+### 4. Configuración Automática
+El sistema detecta automáticamente el entorno basándose en:
+- La variable `ENVIRONMENT` en el archivo `.env`
+- O por el dominio (localhost = local, otros = hosting)
 
 ## 🚀 Endpoints de la API
 
 ### Base URL
-- **Local:** `http://localhost/controladores-api-flutter/api/`
-- **Hosting:** `https://tudominio.com/api/`
+- **Local:** `http://localhost/controladores api flutter/api/`
+- **Hosting:** `https://tu-dominio.com/api/`
+
+> **Nota:** Las URLs se configuran automáticamente desde el archivo `.env`
 
 ### 1. Probar API
 ```
@@ -200,15 +203,30 @@ class AuthService {
 - ✅ **Manejo de errores** robusto
 - ✅ **Respuestas JSON** estandarizadas
 
+## 🔒 Seguridad
+
+### Variables de Entorno
+- ✅ **Archivo `.env`** no se sube al repositorio (está en `.gitignore`)
+- ✅ **Credenciales sensibles** protegidas
+- ✅ **JWT Secret** configurable
+- ✅ **Detección automática** de entorno
+
+### Configuración Segura
+```env
+# Cambiar estos valores en producción
+JWT_SECRET=tu_clave_secreta_muy_larga_y_segura_123456789
+DB_PASS_HOSTING=tu_password_super_seguro
+```
+
 ## 🔧 Troubleshooting
 
 ### Error de conexión a base de datos:
-1. Verificar credenciales en `config/database.php`
+1. Verificar credenciales en el archivo `.env`
 2. Asegurar que la base de datos existe
 3. Verificar que el archivo SQL se importó correctamente
 
 ### Error 404 en endpoints:
-1. Verificar la configuración de `BASE_PATH`
+1. Verificar la configuración de `BASE_PATH_LOCAL` o `BASE_PATH_HOSTING` en `.env`
 2. Asegurar que la estructura de carpetas es correcta
 3. Verificar permisos de archivos en el servidor
 
@@ -216,3 +234,8 @@ class AuthService {
 1. Verificar que los headers CORS están configurados
 2. Asegurar que la URL base es correcta
 3. Verificar que el método HTTP es correcto (POST para login/register)
+
+### Error de variables de entorno:
+1. Verificar que el archivo `.env` existe
+2. Verificar que las variables están definidas correctamente
+3. Verificar que no hay espacios extra en las variables

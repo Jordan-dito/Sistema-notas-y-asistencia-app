@@ -6,6 +6,7 @@ Thumbs.db
 config/local.php
 .env
 .env.local
+.env.production
 
 # Logs
 *.log

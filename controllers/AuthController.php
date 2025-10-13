@@ -253,6 +253,52 @@ class AuthController {
     }
     
     /**
+     * Obtener todos los estudiantes
+     */
+    public function getStudents() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido'
+            ]);
+            return;
+        }
+        
+        // Obtener estudiantes
+        $result = $this->userModel->getAllStudents();
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
+     * Obtener todos los profesores
+     */
+    public function getTeachers() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido'
+            ]);
+            return;
+        }
+        
+        // Obtener profesores
+        $result = $this->userModel->getAllTeachers();
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
      * Enviar respuesta JSON
      */
     private function sendResponse($statusCode, $data) {

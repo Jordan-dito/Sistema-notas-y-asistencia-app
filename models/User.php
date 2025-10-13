@@ -212,5 +212,91 @@ class User {
             return [];
         }
     }
+    
+    /**
+     * Obtener todos los estudiantes
+     */
+    public function getAllStudents() {
+        try {
+            $sql = "SELECT 
+                        u.id as user_id,
+                        u.email,
+                        u.rol,
+                        u.estado as user_estado,
+                        e.id as estudiante_id,
+                        e.nombre,
+                        e.apellido,
+                        e.grado,
+                        e.seccion,
+                        e.telefono,
+                        e.direccion,
+                        e.fecha_nacimiento,
+                        e.estado as estudiante_estado,
+                        e.fecha_creacion
+                    FROM usuarios u
+                    INNER JOIN estudiantes e ON u.id = e.usuario_id
+                    WHERE u.rol = 'estudiante' AND u.estado = 'activo' AND e.estado = 'activo'
+                    ORDER BY e.grado, e.seccion, e.apellido, e.nombre";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $students = $stmt->fetchAll();
+            
+            return [
+                'success' => true,
+                'message' => 'Estudiantes obtenidos exitosamente',
+                'data' => $students,
+                'total' => count($students)
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al obtener estudiantes: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Obtener todos los profesores
+     */
+    public function getAllTeachers() {
+        try {
+            $sql = "SELECT 
+                        u.id as user_id,
+                        u.email,
+                        u.rol,
+                        u.estado as user_estado,
+                        p.id as profesor_id,
+                        p.nombre,
+                        p.apellido,
+                        p.telefono,
+                        p.direccion,
+                        p.fecha_contratacion,
+                        p.estado as profesor_estado,
+                        p.fecha_creacion
+                    FROM usuarios u
+                    INNER JOIN profesores p ON u.id = p.usuario_id
+                    WHERE u.rol = 'profesor' AND u.estado = 'activo' AND p.estado = 'activo'
+                    ORDER BY p.apellido, p.nombre";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $teachers = $stmt->fetchAll();
+            
+            return [
+                'success' => true,
+                'message' => 'Profesores obtenidos exitosamente',
+                'data' => $teachers,
+                'total' => count($teachers)
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al obtener profesores: ' . $e->getMessage()
+            ];
+        }
+    }
 }
 ?>
