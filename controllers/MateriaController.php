@@ -124,6 +124,81 @@ class MateriaController {
     }
     
     /**
+     * Editar materia
+     */
+    public function editMateria() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use PUT'
+            ]);
+            return;
+        }
+        
+        // Obtener datos del request
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        // Validar ID de la materia
+        if (!isset($input['materia_id']) || empty($input['materia_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'ID de la materia es requerido'
+            ]);
+            return;
+        }
+        
+        $materiaId = intval($input['materia_id']);
+        
+        // Validar datos requeridos
+        $requiredFields = ['nombre', 'grado', 'seccion', 'profesor_id', 'año_academico'];
+        foreach ($requiredFields as $field) {
+            if (!isset($input[$field]) || empty(trim($input[$field]))) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'message' => "El campo $field es requerido"
+                ]);
+                return;
+            }
+        }
+        
+        $nombre = trim($input['nombre']);
+        $grado = trim($input['grado']);
+        $seccion = trim($input['seccion']);
+        $profesorId = intval($input['profesor_id']);
+        $añoAcademico = intval($input['año_academico']);
+        
+        // Validar año académico
+        $currentYear = date('Y');
+        if ($añoAcademico < 2020 || $añoAcademico > ($currentYear + 1)) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'Año académico inválido'
+            ]);
+            return;
+        }
+        
+        // Preparar datos para actualizar
+        $materiaData = [
+            'nombre' => $nombre,
+            'grado' => $grado,
+            'seccion' => $seccion,
+            'profesor_id' => $profesorId,
+            'año_academico' => $añoAcademico
+        ];
+        
+        // Actualizar materia
+        $result = $this->materiaModel->updateMateria($materiaId, $materiaData);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $statusCode = ($result['message'] == 'Materia no encontrada' || $result['message'] == 'Profesor no encontrado') ? 404 : 500;
+            $this->sendResponse($statusCode, $result);
+        }
+    }
+    
+    /**
      * Eliminar materia
      */
     public function deleteMateria() {

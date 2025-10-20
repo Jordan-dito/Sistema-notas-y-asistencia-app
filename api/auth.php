@@ -39,6 +39,10 @@ switch ($action) {
         $authController->editStudent();
         break;
         
+    case 'edit-teacher':
+        $authController->editTeacher();
+        break;
+        
     case 'delete-student':
         $authController->deleteStudent();
         break;
@@ -60,6 +64,7 @@ switch ($action) {
                 'students' => BASE_URL . '/api/auth.php?action=students',
                 'teachers' => BASE_URL . '/api/auth.php?action=teachers',
                 'edit-student' => BASE_URL . '/api/auth.php?action=edit-student',
+                'edit-teacher' => BASE_URL . '/api/auth.php?action=edit-teacher',
                 'delete-student' => BASE_URL . '/api/auth.php?action=delete-student',
                 'delete-teacher' => BASE_URL . '/api/auth.php?action=delete-teacher'
             ]

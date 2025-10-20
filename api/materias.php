@@ -27,6 +27,10 @@ switch ($action) {
         $materiaController->getMateriasByProfesor();
         break;
         
+    case 'edit':
+        $materiaController->editMateria();
+        break;
+        
     case 'delete':
         $materiaController->deleteMateria();
         break;
@@ -41,6 +45,7 @@ switch ($action) {
                 'create' => BASE_URL . '/api/materias.php?action=create',
                 'all' => BASE_URL . '/api/materias.php?action=all',
                 'by-profesor' => BASE_URL . '/api/materias.php?action=by-profesor&profesor_id={id}',
+                'edit' => BASE_URL . '/api/materias.php?action=edit',
                 'delete' => BASE_URL . '/api/materias.php?action=delete'
             ]
         ], JSON_UNESCAPED_UNICODE);

@@ -163,6 +163,108 @@ class Materia {
     }
     
     /**
+     * Actualizar datos de una materia
+     */
+    public function updateMateria($materiaId, $data) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Verificar que la materia existe
+            $sql = "SELECT id FROM materias WHERE id = ? AND estado = 'activo'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$materiaId]);
+            $materia = $stmt->fetch();
+            
+            if (!$materia) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Materia no encontrada'
+                ];
+            }
+            
+            // Verificar que el profesor existe si se está cambiando
+            if (isset($data['profesor_id'])) {
+                $sql = "SELECT id, nombre, apellido FROM profesores WHERE id = ? AND estado = 'activo'";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$data['profesor_id']]);
+                $profesor = $stmt->fetch();
+                
+                if (!$profesor) {
+                    $this->db->rollBack();
+                    return [
+                        'success' => false,
+                        'message' => 'Profesor no encontrado'
+                    ];
+                }
+            }
+            
+            // Verificar si ya existe una materia igual (excluyendo la actual)
+            $sql = "SELECT id FROM materias 
+                    WHERE nombre = ? AND grado = ? AND seccion = ? AND año_academico = ? 
+                    AND estado = 'activo' AND id != ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $data['nombre'], 
+                $data['grado'], 
+                $data['seccion'], 
+                $data['año_academico'], 
+                $materiaId
+            ]);
+            
+            if ($stmt->fetch()) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Ya existe una materia con el mismo nombre, grado, sección y año académico'
+                ];
+            }
+            
+            // Actualizar datos de la materia
+            $sql = "UPDATE materias SET 
+                        nombre = ?, 
+                        grado = ?, 
+                        seccion = ?, 
+                        profesor_id = ?, 
+                        año_academico = ?,
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $data['nombre'],
+                $data['grado'],
+                $data['seccion'],
+                $data['profesor_id'],
+                $data['año_academico'],
+                $materiaId
+            ]);
+            
+            $this->db->commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Materia actualizada exitosamente',
+                'data' => [
+                    'materia_id' => $materiaId,
+                    'nombre' => $data['nombre'],
+                    'grado' => $data['grado'],
+                    'seccion' => $data['seccion'],
+                    'año_academico' => $data['año_academico'],
+                    'profesor_id' => $data['profesor_id']
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar materia: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
      * Eliminar materia (cambiar estado a inactivo)
      */
     public function deleteMateria($materiaId) {

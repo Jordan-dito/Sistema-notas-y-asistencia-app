@@ -436,6 +436,68 @@ class User {
     }
     
     /**
+     * Actualizar datos de un profesor
+     */
+    public function updateTeacher($profesorId, $data) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Verificar que el profesor existe
+            $sql = "SELECT id, usuario_id FROM profesores WHERE id = ? AND estado = 'activo'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$profesorId]);
+            $teacher = $stmt->fetch();
+            
+            if (!$teacher) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Profesor no encontrado'
+                ];
+            }
+            
+            // Actualizar datos del profesor
+            $sql = "UPDATE profesores SET 
+                        nombre = ?, 
+                        apellido = ?, 
+                        telefono = ?, 
+                        direccion = ?, 
+                        fecha_contratacion = ?,
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $data['nombre'],
+                $data['apellido'],
+                $data['telefono'],
+                $data['direccion'],
+                $data['fecha_contratacion'],
+                $profesorId
+            ]);
+            
+            $this->db->commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Profesor actualizado exitosamente',
+                'data' => [
+                    'profesor_id' => $profesorId,
+                    'nombre' => $data['nombre'],
+                    'apellido' => $data['apellido']
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar profesor: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
      * Eliminar profesor (cambiar estado a inactivo)
      */
     public function deleteTeacher($profesorId) {
