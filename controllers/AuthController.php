@@ -299,6 +299,142 @@ class AuthController {
     }
     
     /**
+     * Editar estudiante
+     */
+    public function editStudent() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use PUT'
+            ]);
+            return;
+        }
+        
+        // Obtener datos del request
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        // Validar ID del estudiante
+        if (!isset($input['estudiante_id']) || empty($input['estudiante_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'ID del estudiante es requerido'
+            ]);
+            return;
+        }
+        
+        $estudianteId = $input['estudiante_id'];
+        
+        // Validar datos requeridos
+        $requiredFields = ['nombre', 'apellido', 'grado', 'seccion'];
+        foreach ($requiredFields as $field) {
+            if (!isset($input[$field]) || empty(trim($input[$field]))) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'message' => "El campo $field es requerido"
+                ]);
+                return;
+            }
+        }
+        
+        // Preparar datos para actualizar
+        $studentData = [
+            'nombre' => trim($input['nombre']),
+            'apellido' => trim($input['apellido']),
+            'grado' => trim($input['grado']),
+            'seccion' => trim($input['seccion']),
+            'telefono' => $input['telefono'] ?? null,
+            'direccion' => $input['direccion'] ?? null,
+            'fecha_nacimiento' => $input['fecha_nacimiento'] ?? null
+        ];
+        
+        // Actualizar estudiante
+        $result = $this->userModel->updateStudent($estudianteId, $studentData);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
+     * Eliminar estudiante (cambiar estado a inactivo)
+     */
+    public function deleteStudent() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use DELETE'
+            ]);
+            return;
+        }
+        
+        // Obtener datos del request
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        // Validar ID del estudiante
+        if (!isset($input['estudiante_id']) || empty($input['estudiante_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'ID del estudiante es requerido'
+            ]);
+            return;
+        }
+        
+        $estudianteId = intval($input['estudiante_id']);
+        
+        // Eliminar estudiante (cambiar estado a inactivo)
+        $result = $this->userModel->deleteStudent($estudianteId);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $statusCode = ($result['message'] == 'Estudiante no encontrado') ? 404 : 500;
+            $this->sendResponse($statusCode, $result);
+        }
+    }
+    
+    /**
+     * Eliminar profesor (cambiar estado a inactivo)
+     */
+    public function deleteTeacher() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use DELETE'
+            ]);
+            return;
+        }
+        
+        // Obtener datos del request
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        // Validar ID del profesor
+        if (!isset($input['profesor_id']) || empty($input['profesor_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'ID del profesor es requerido'
+            ]);
+            return;
+        }
+        
+        $profesorId = intval($input['profesor_id']);
+        
+        // Eliminar profesor (cambiar estado a inactivo)
+        $result = $this->userModel->deleteTeacher($profesorId);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $statusCode = ($result['message'] == 'Profesor no encontrado') ? 404 : 500;
+            $this->sendResponse($statusCode, $result);
+        }
+    }
+    
+    /**
      * Enviar respuesta JSON
      */
     private function sendResponse($statusCode, $data) {

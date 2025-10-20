@@ -298,5 +298,209 @@ class User {
             ];
         }
     }
+    
+    /**
+     * Actualizar datos de un estudiante
+     */
+    public function updateStudent($estudianteId, $data) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Verificar que el estudiante existe
+            $sql = "SELECT id, usuario_id FROM estudiantes WHERE id = ? AND estado = 'activo'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$estudianteId]);
+            $student = $stmt->fetch();
+            
+            if (!$student) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Estudiante no encontrado'
+                ];
+            }
+            
+            // Actualizar datos del estudiante
+            $sql = "UPDATE estudiantes SET 
+                        nombre = ?, 
+                        apellido = ?, 
+                        grado = ?, 
+                        seccion = ?, 
+                        telefono = ?, 
+                        direccion = ?, 
+                        fecha_nacimiento = ?,
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $data['nombre'],
+                $data['apellido'],
+                $data['grado'],
+                $data['seccion'],
+                $data['telefono'],
+                $data['direccion'],
+                $data['fecha_nacimiento'],
+                $estudianteId
+            ]);
+            
+            $this->db->commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Estudiante actualizado exitosamente',
+                'data' => [
+                    'estudiante_id' => $estudianteId,
+                    'nombre' => $data['nombre'],
+                    'apellido' => $data['apellido'],
+                    'grado' => $data['grado'],
+                    'seccion' => $data['seccion']
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar estudiante: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Eliminar estudiante (cambiar estado a inactivo)
+     */
+    public function deleteStudent($estudianteId) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Verificar que el estudiante existe y está activo
+            $sql = "SELECT e.id, e.nombre, e.apellido, e.usuario_id 
+                    FROM estudiantes e 
+                    WHERE e.id = ? AND e.estado = 'activo'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$estudianteId]);
+            $student = $stmt->fetch();
+            
+            if (!$student) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Estudiante no encontrado'
+                ];
+            }
+            
+            // Cambiar estado del estudiante a inactivo
+            $sql = "UPDATE estudiantes SET 
+                        estado = 'inactivo',
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$estudianteId]);
+            
+            // Cambiar estado del usuario a inactivo
+            $sql = "UPDATE usuarios SET 
+                        estado = 'inactivo',
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$student['usuario_id']]);
+            
+            // Cambiar estado de las inscripciones a inactivo
+            $sql = "UPDATE inscripciones SET 
+                        estado = 'inactivo'
+                    WHERE estudiante_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$estudianteId]);
+            
+            $this->db->commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Estudiante eliminado exitosamente',
+                'data' => [
+                    'estudiante_id' => $estudianteId,
+                    'nombre' => $student['nombre'],
+                    'apellido' => $student['apellido'],
+                    'estado' => 'inactivo'
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Error al eliminar estudiante: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Eliminar profesor (cambiar estado a inactivo)
+     */
+    public function deleteTeacher($profesorId) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Verificar que el profesor existe y está activo
+            $sql = "SELECT p.id, p.nombre, p.apellido, p.usuario_id 
+                    FROM profesores p 
+                    WHERE p.id = ? AND p.estado = 'activo'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$profesorId]);
+            $teacher = $stmt->fetch();
+            
+            if (!$teacher) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Profesor no encontrado'
+                ];
+            }
+            
+            // Cambiar estado del profesor a inactivo
+            $sql = "UPDATE profesores SET 
+                        estado = 'inactivo',
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$profesorId]);
+            
+            // Cambiar estado del usuario a inactivo
+            $sql = "UPDATE usuarios SET 
+                        estado = 'inactivo',
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$teacher['usuario_id']]);
+            
+            // Cambiar estado de las materias a inactivo
+            $sql = "UPDATE materias SET 
+                        estado = 'inactivo'
+                    WHERE profesor_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$profesorId]);
+            
+            $this->db->commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Profesor eliminado exitosamente',
+                'data' => [
+                    'profesor_id' => $profesorId,
+                    'nombre' => $teacher['nombre'],
+                    'apellido' => $teacher['apellido'],
+                    'estado' => 'inactivo'
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            return [
+                'success' => false,
+                'message' => 'Error al eliminar profesor: ' . $e->getMessage()
+            ];
+        }
+    }
 }
 ?>
