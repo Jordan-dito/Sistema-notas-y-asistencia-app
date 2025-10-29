@@ -297,5 +297,106 @@ class Asistencia {
             ];
         }
     }
+    
+    /**
+     * Verificar si existe asistencia para una materia y fecha
+     */
+    public function verificarAsistencia($materiaId, $fechaClase) {
+        try {
+            $sql = "SELECT COUNT(*) as total_registros 
+                    FROM asistencia 
+                    WHERE materia_id = ? AND fecha_clase = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$materiaId, $fechaClase]);
+            $resultado = $stmt->fetch();
+            
+            $existe = $resultado['total_registros'] > 0;
+            
+            return [
+                'success' => true,
+                'message' => 'Verificación completada',
+                'data' => [
+                    'existe' => $existe,
+                    'total_registros' => (int)$resultado['total_registros'],
+                    'materia_id' => $materiaId,
+                    'fecha_clase' => $fechaClase
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error de base de datos: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Listar todas las asistencias de una fecha específica
+     */
+    public function listarAsistenciasPorFecha($materiaId, $fechaClase) {
+        try {
+            $sql = "SELECT 
+                        a.id,
+                        a.estudiante_id,
+                        CONCAT(e.nombre, ' ', e.apellido) as nombre_estudiante,
+                        e.grado,
+                        e.seccion,
+                        a.estado,
+                        a.fecha_clase,
+                        a.fecha_registro,
+                        a.profesor_id,
+                        CONCAT(p.nombre, ' ', p.apellido) as nombre_profesor
+                    FROM asistencia a
+                    JOIN estudiantes e ON a.estudiante_id = e.id
+                    LEFT JOIN profesores p ON a.profesor_id = p.id
+                    WHERE a.materia_id = ? AND a.fecha_clase = ?
+                    ORDER BY e.nombre, e.apellido";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$materiaId, $fechaClase]);
+            $asistencias = $stmt->fetchAll();
+            
+            // Calcular resumen
+            $resumen = [
+                'total' => count($asistencias),
+                'presentes' => 0,
+                'ausentes' => 0,
+                'tardanzas' => 0
+            ];
+            
+            foreach ($asistencias as $asistencia) {
+                switch ($asistencia['estado']) {
+                    case 'presente':
+                        $resumen['presentes']++;
+                        break;
+                    case 'ausente':
+                        $resumen['ausentes']++;
+                        break;
+                    case 'tardanza':
+                        $resumen['tardanzas']++;
+                        break;
+                }
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Asistencias listadas correctamente',
+                'data' => [
+                    'fecha_clase' => $fechaClase,
+                    'materia_id' => $materiaId,
+                    'resumen' => $resumen,
+                    'asistencias' => $asistencias
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error de base de datos: ' . $e->getMessage()
+            ];
+        }
+    }
 }
 ?>

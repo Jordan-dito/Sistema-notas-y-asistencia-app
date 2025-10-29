@@ -48,6 +48,14 @@ try {
             $controller->obtenerResumenClase();
             break;
             
+        case 'verificar':
+            $controller->verificarAsistencia();
+            break;
+            
+        case 'listar':
+            $controller->listarAsistencias();
+            break;
+            
         default:
             http_response_code(404);
             echo json_encode([
@@ -59,7 +67,9 @@ try {
                     'estadisticas_estudiante' => 'GET - Obtener estadísticas de asistencia de un estudiante',
                     'estudiantes_inscritos' => 'GET - Obtener estudiantes inscritos en una materia',
                     'actualizar' => 'PUT - Actualizar estado de asistencia individual',
-                    'resumen_clase' => 'GET - Obtener resumen de asistencia por fecha'
+                    'resumen_clase' => 'GET - Obtener resumen de asistencia por fecha',
+                    'verificar' => 'GET - Verificar si existe asistencia para una materia y fecha',
+                    'listar' => 'GET - Listar todas las asistencias de una fecha específica'
                 ]
             ], JSON_UNESCAPED_UNICODE);
             break;

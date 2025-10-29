@@ -299,6 +299,94 @@ class AsistenciaController {
     }
     
     /**
+     * Verificar si existe asistencia para una materia y fecha
+     */
+    public function verificarAsistencia() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use GET'
+            ]);
+            return;
+        }
+        
+        // Obtener parámetros de la URL
+        if (!isset($_GET['materia_id']) || !isset($_GET['fecha_clase'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'materia_id y fecha_clase son requeridos'
+            ]);
+            return;
+        }
+        
+        $materiaId = intval($_GET['materia_id']);
+        $fechaClase = $_GET['fecha_clase'];
+        
+        // Validar fecha
+        if (!$this->validarFecha($fechaClase)) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'Formato de fecha inválido. Use YYYY-MM-DD'
+            ]);
+            return;
+        }
+        
+        // Verificar asistencia
+        $result = $this->asistenciaModel->verificarAsistencia($materiaId, $fechaClase);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
+     * Listar todas las asistencias de una fecha específica
+     */
+    public function listarAsistencias() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use GET'
+            ]);
+            return;
+        }
+        
+        // Obtener parámetros de la URL
+        if (!isset($_GET['materia_id']) || !isset($_GET['fecha_clase'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'materia_id y fecha_clase son requeridos'
+            ]);
+            return;
+        }
+        
+        $materiaId = intval($_GET['materia_id']);
+        $fechaClase = $_GET['fecha_clase'];
+        
+        // Validar fecha
+        if (!$this->validarFecha($fechaClase)) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'Formato de fecha inválido. Use YYYY-MM-DD'
+            ]);
+            return;
+        }
+        
+        // Listar asistencias
+        $result = $this->asistenciaModel->listarAsistenciasPorFecha($materiaId, $fechaClase);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
      * Validar formato de fecha
      */
     private function validarFecha($fecha) {
