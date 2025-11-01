@@ -343,6 +343,41 @@ class AsistenciaController {
     }
     
     /**
+     * Listar todas las asistencias de un estudiante en una materia
+     */
+    public function listarAsistenciasEstudiante() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use GET'
+            ]);
+            return;
+        }
+        
+        // Obtener parámetros de la URL
+        if (!isset($_GET['estudiante_id']) || !isset($_GET['materia_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'estudiante_id y materia_id son requeridos'
+            ]);
+            return;
+        }
+        
+        $estudianteId = intval($_GET['estudiante_id']);
+        $materiaId = intval($_GET['materia_id']);
+        
+        // Listar asistencias del estudiante
+        $result = $this->asistenciaModel->listarAsistenciasEstudiante($estudianteId, $materiaId);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
      * Listar todas las asistencias de una fecha específica
      */
     public function listarAsistencias() {

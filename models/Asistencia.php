@@ -333,6 +333,81 @@ class Asistencia {
     }
     
     /**
+     * Listar todas las asistencias de un estudiante en una materia
+     */
+    public function listarAsistenciasEstudiante($estudianteId, $materiaId) {
+        try {
+            $sql = "SELECT 
+                        a.id,
+                        a.estudiante_id,
+                        CONCAT(e.nombre, ' ', e.apellido) as nombre_estudiante,
+                        a.materia_id,
+                        m.nombre as nombre_materia,
+                        a.fecha_clase,
+                        a.estado,
+                        a.fecha_registro,
+                        a.profesor_id,
+                        CONCAT(p.nombre, ' ', p.apellido) as nombre_profesor
+                    FROM asistencia a
+                    JOIN estudiantes e ON a.estudiante_id = e.id
+                    JOIN materias m ON a.materia_id = m.id
+                    LEFT JOIN profesores p ON a.profesor_id = p.id
+                    WHERE a.estudiante_id = ? AND a.materia_id = ?
+                    ORDER BY a.fecha_clase DESC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$estudianteId, $materiaId]);
+            $asistencias = $stmt->fetchAll();
+            
+            // Calcular resumen
+            $resumen = [
+                'total' => count($asistencias),
+                'presentes' => 0,
+                'ausentes' => 0,
+                'tardanzas' => 0
+            ];
+            
+            foreach ($asistencias as $asistencia) {
+                switch ($asistencia['estado']) {
+                    case 'presente':
+                        $resumen['presentes']++;
+                        break;
+                    case 'ausente':
+                        $resumen['ausentes']++;
+                        break;
+                    case 'tardanza':
+                        $resumen['tardanzas']++;
+                        break;
+                }
+            }
+            
+            // Calcular porcentaje de asistencia
+            if ($resumen['total'] > 0) {
+                $resumen['porcentaje_asistencia'] = round(($resumen['presentes'] / $resumen['total']) * 100, 2);
+            } else {
+                $resumen['porcentaje_asistencia'] = 0;
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Asistencias del estudiante listadas correctamente',
+                'data' => [
+                    'estudiante_id' => $estudianteId,
+                    'materia_id' => $materiaId,
+                    'resumen' => $resumen,
+                    'asistencias' => $asistencias
+                ]
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error de base de datos: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
      * Listar todas las asistencias de una fecha específica
      */
     public function listarAsistenciasPorFecha($materiaId, $fechaClase) {

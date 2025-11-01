@@ -56,6 +56,10 @@ try {
             $controller->listarAsistencias();
             break;
             
+        case 'listar_estudiante':
+            $controller->listarAsistenciasEstudiante();
+            break;
+            
         default:
             http_response_code(404);
             echo json_encode([
@@ -69,7 +73,8 @@ try {
                     'actualizar' => 'PUT - Actualizar estado de asistencia individual',
                     'resumen_clase' => 'GET - Obtener resumen de asistencia por fecha',
                     'verificar' => 'GET - Verificar si existe asistencia para una materia y fecha',
-                    'listar' => 'GET - Listar todas las asistencias de una fecha específica'
+                    'listar' => 'GET - Listar todas las asistencias de una fecha específica',
+                    'listar_estudiante' => 'GET - Listar todas las asistencias de un estudiante en una materia'
                 ]
             ], JSON_UNESCAPED_UNICODE);
             break;
