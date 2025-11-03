@@ -55,8 +55,8 @@ class MaterialReforzamiento {
             // Insertar material (solo texto y link, sin archivos)
             $sql = "INSERT INTO material_reforzamiento 
                     (materia_id, estudiante_id, profesor_id, año_academico, titulo, descripcion, 
-                     tipo_contenido, contenido, url_externa, fecha_publicacion, fecha_vencimiento) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?)";
+                     tipo_contenido, contenido, url_externa, fecha_publicacion, fecha_vencimiento, estado) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, 'activo')";
             
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
