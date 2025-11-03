@@ -131,8 +131,6 @@ class MaterialReforzamiento {
                         mr.descripcion,
                         mr.tipo_contenido,
                         mr.contenido,
-                        mr.archivo_nombre,
-                        mr.archivo_ruta,
                         mr.url_externa,
                         mr.fecha_publicacion,
                         mr.fecha_vencimiento,
@@ -151,13 +149,6 @@ class MaterialReforzamiento {
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$materiaId, $añoAcademico, $estudianteId]);
             $materiales = $stmt->fetchAll();
-            
-            // Convertir rutas de archivos a URLs
-            foreach ($materiales as &$material) {
-                if ($material['archivo_ruta']) {
-                    $material['archivo_url'] = str_replace('../uploads/', '../uploads/', $material['archivo_ruta']);
-                }
-            }
             
             return [
                 'success' => true,
@@ -241,8 +232,6 @@ class MaterialReforzamiento {
                         mr.descripcion,
                         mr.tipo_contenido,
                         mr.contenido,
-                        mr.archivo_nombre,
-                        mr.archivo_ruta,
                         mr.url_externa,
                         mr.fecha_publicacion,
                         mr.fecha_vencimiento,
@@ -277,7 +266,7 @@ class MaterialReforzamiento {
     public function eliminarMaterial($materialId, $profesorId) {
         try {
             // Verificar que el material pertenece al profesor
-            $sqlCheck = "SELECT archivo_ruta FROM material_reforzamiento 
+            $sqlCheck = "SELECT id FROM material_reforzamiento 
                         WHERE id = ? AND profesor_id = ?";
             $stmtCheck = $this->db->prepare($sqlCheck);
             $stmtCheck->execute([$materialId, $profesorId]);
@@ -290,12 +279,7 @@ class MaterialReforzamiento {
                 ];
             }
             
-            // Eliminar archivo físico si existe
-            if ($material['archivo_ruta'] && file_exists($material['archivo_ruta'])) {
-                unlink($material['archivo_ruta']);
-            }
-            
-            // Eliminar registro
+            // Eliminar registro (no hay archivos físicos que eliminar)
             $sql = "DELETE FROM material_reforzamiento WHERE id = ? AND profesor_id = ?";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([$materialId, $profesorId]);
