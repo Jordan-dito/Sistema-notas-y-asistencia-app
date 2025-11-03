@@ -52,18 +52,11 @@ class MaterialReforzamiento {
                 $fechaVencimiento = $config['fecha_fin'];
             }
             
-            // No se procesan archivos, solo texto y link
-            $archivoNombre = null;
-            $archivoRuta = null;
-            $archivoTipo = null;
-            $archivoTamaño = null;
-            
-            // Insertar material
+            // Insertar material (solo texto y link, sin archivos)
             $sql = "INSERT INTO material_reforzamiento 
                     (materia_id, estudiante_id, profesor_id, año_academico, titulo, descripcion, 
-                     tipo_contenido, contenido, archivo_nombre, archivo_ruta, archivo_tipo, archivo_tamaño,
-                     url_externa, fecha_publicacion, fecha_vencimiento) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?)";
+                     tipo_contenido, contenido, url_externa, fecha_publicacion, fecha_vencimiento) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?)";
             
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
@@ -75,10 +68,6 @@ class MaterialReforzamiento {
                 $descripcion,
                 $tipoContenido,
                 $contenido,
-                $archivoNombre,
-                $archivoRuta,
-                $archivoTipo,
-                $archivoTamaño,
                 $urlExterna,
                 $fechaVencimiento
             ]);
