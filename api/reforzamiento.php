@@ -2,7 +2,7 @@
 /**
  * API de Material de Reforzamiento
  * Endpoints para manejar material de reforzamiento para estudiantes reprobados
- * Sistema: Profesor sube material (texto, imágenes, PDF) para estudiantes reprobados (promedio < 60)
+ * Sistema: Profesor sube material (texto o link) para estudiantes reprobados (promedio < 60)
  */
 
 header('Content-Type: application/json');
@@ -51,7 +51,7 @@ try {
                 'success' => false,
                 'message' => 'Acción no encontrada',
                 'available_actions' => [
-                    'subir' => 'POST - Subir material de reforzamiento (profesor)',
+                    'subir' => 'POST - Subir material de reforzamiento (profesor) - Solo texto y link',
                     'obtener_estudiante' => 'GET - Obtener material para estudiante reprobado',
                     'estudiantes_reprobados' => 'GET - Obtener lista de estudiantes reprobados (profesor)',
                     'material_por_estudiante' => 'GET - Obtener material de un estudiante específico (profesor)',

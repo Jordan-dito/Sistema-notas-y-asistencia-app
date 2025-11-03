@@ -45,33 +45,41 @@ class MaterialReforzamientoController {
             return;
         }
         
-        // Validar tipo de contenido
-        $tiposValidos = ['texto', 'imagen', 'pdf', 'link', 'video'];
+        // Validar tipo de contenido (solo texto y link permitidos)
+        $tiposValidos = ['texto', 'link'];
         if (!in_array($tipoContenido, $tiposValidos)) {
             $this->sendResponse(400, [
                 'success' => false,
-                'message' => 'Tipo de contenido inválido. Use: texto, imagen, pdf, link, video'
+                'message' => 'Tipo de contenido inválido. Solo se permite: texto o link'
             ]);
             return;
         }
         
-        // Obtener archivo si existe
+        // No se aceptan archivos, solo link y texto
         $archivo = null;
-        if (isset($_FILES['archivo']) && $_FILES['archivo']['error'] === UPLOAD_ERR_OK) {
-            $archivo = $_FILES['archivo'];
-        }
         
-        // Si es link o video, necesita url_externa
+        // Si es link, necesita url_externa
         $urlExterna = null;
-        if ($tipoContenido === 'link' || $tipoContenido === 'video') {
+        if ($tipoContenido === 'link') {
             if (!isset($_POST['url_externa']) || empty($_POST['url_externa'])) {
                 $this->sendResponse(400, [
                     'success' => false,
-                    'message' => 'url_externa es requerida para tipo link o video'
+                    'message' => 'url_externa es requerida para tipo link'
                 ]);
                 return;
             }
             $urlExterna = trim($_POST['url_externa']);
+        }
+        
+        // Si es texto, necesita contenido
+        if ($tipoContenido === 'texto') {
+            if (!isset($_POST['contenido']) || empty(trim($_POST['contenido']))) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'message' => 'contenido es requerido para tipo texto'
+                ]);
+                return;
+            }
         }
         
         // Subir material

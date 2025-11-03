@@ -52,50 +52,11 @@ class MaterialReforzamiento {
                 $fechaVencimiento = $config['fecha_fin'];
             }
             
-            // Procesar archivo si existe
+            // No se procesan archivos, solo texto y link
             $archivoNombre = null;
             $archivoRuta = null;
             $archivoTipo = null;
             $archivoTamaño = null;
-            
-            if ($archivo && isset($archivo['tmp_name']) && is_uploaded_file($archivo['tmp_name'])) {
-                $allowedTypes = [
-                    'image/jpeg', 'image/png', 'image/gif',
-                    'application/pdf',
-                    'video/mp4', 'video/mpeg'
-                ];
-                
-                if (!in_array($archivo['type'], $allowedTypes)) {
-                    return [
-                        'success' => false,
-                        'message' => 'Tipo de archivo no permitido. Use imágenes (JPG, PNG, GIF), PDF o videos (MP4)'
-                    ];
-                }
-                
-                // Limitar tamaño a 10MB
-                if ($archivo['size'] > 10 * 1024 * 1024) {
-                    return [
-                        'success' => false,
-                        'message' => 'El archivo es muy grande. Máximo 10MB'
-                    ];
-                }
-                
-                // Generar nombre único
-                $extension = pathinfo($archivo['name'], PATHINFO_EXTENSION);
-                $archivoNombre = $archivo['name'];
-                $archivoNuevoNombre = uniqid('ref_' . $materiaId . '_', true) . '.' . $extension;
-                $archivoRuta = $this->uploadDir . $archivoNuevoNombre;
-                
-                if (!move_uploaded_file($archivo['tmp_name'], $archivoRuta)) {
-                    return [
-                        'success' => false,
-                        'message' => 'Error al subir el archivo'
-                    ];
-                }
-                
-                $archivoTipo = $archivo['type'];
-                $archivoTamaño = $archivo['size'];
-            }
             
             // Insertar material
             $sql = "INSERT INTO material_reforzamiento 
