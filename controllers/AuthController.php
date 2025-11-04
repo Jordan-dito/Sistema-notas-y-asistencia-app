@@ -365,6 +365,18 @@ class AuthController {
             }
         }
         
+        // Validar campo estado si está presente
+        $estado = isset($input['estado']) ? trim($input['estado']) : null;
+        if ($estado !== null) {
+            if (!in_array($estado, ['activo', 'inactivo'])) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'message' => 'Estado inválido. Debe ser "activo" o "inactivo"'
+                ]);
+                return;
+            }
+        }
+        
         // Preparar datos para actualizar
         $studentData = [
             'nombre' => trim($input['nombre']),
@@ -375,6 +387,11 @@ class AuthController {
             'direccion' => $input['direccion'] ?? null,
             'fecha_nacimiento' => $input['fecha_nacimiento'] ?? null
         ];
+        
+        // Agregar estado si está presente
+        if ($estado !== null) {
+            $studentData['estado'] = $estado;
+        }
         
         // ============================================
         // VALIDACIÓN: Estudiante duplicado (excluyendo el estudiante actual)

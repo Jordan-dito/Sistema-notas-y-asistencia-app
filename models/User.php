@@ -509,8 +509,8 @@ class User {
         try {
             $this->db->beginTransaction();
             
-            // Verificar que el estudiante existe
-            $sql = "SELECT id, usuario_id FROM estudiantes WHERE id = ? AND estado = 'activo'";
+            // Verificar que el estudiante existe (sin filtrar por estado para permitir reactivar)
+            $sql = "SELECT id, usuario_id FROM estudiantes WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$estudianteId]);
             $student = $stmt->fetch();
@@ -523,7 +523,7 @@ class User {
                 ];
             }
             
-            // Actualizar datos del estudiante
+            // Construir la consulta UPDATE dinámicamente
             $sql = "UPDATE estudiantes SET 
                         nombre = ?, 
                         apellido = ?, 
@@ -531,21 +531,29 @@ class User {
                         seccion = ?, 
                         telefono = ?, 
                         direccion = ?, 
-                        fecha_nacimiento = ?,
-                        fecha_actualizacion = CURRENT_TIMESTAMP
-                    WHERE id = ?";
+                        fecha_nacimiento = ?";
             
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
+            $params = [
                 $data['nombre'],
                 $data['apellido'],
                 $data['grado'],
                 $data['seccion'],
                 $data['telefono'],
                 $data['direccion'],
-                $data['fecha_nacimiento'],
-                $estudianteId
-            ]);
+                $data['fecha_nacimiento']
+            ];
+            
+            // Agregar estado si está presente
+            if (isset($data['estado'])) {
+                $sql .= ", estado = ?";
+                $params[] = $data['estado'];
+            }
+            
+            $sql .= ", fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?";
+            $params[] = $estudianteId;
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
             
             $this->db->commit();
             
