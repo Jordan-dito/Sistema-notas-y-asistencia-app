@@ -362,8 +362,9 @@ class User {
     
     /**
      * Obtener todos los estudiantes
+     * @param bool $includeInactive Por defecto true, incluye estudiantes inactivos
      */
-    public function getAllStudents() {
+    public function getAllStudents($includeInactive = true) {
         try {
             $sql = "SELECT 
                         u.id as user_id,
@@ -382,8 +383,14 @@ class User {
                         e.fecha_creacion
                     FROM usuarios u
                     INNER JOIN estudiantes e ON u.id = e.usuario_id
-                    WHERE u.rol = 'estudiante' AND u.estado = 'activo' AND e.estado = 'activo'
-                    ORDER BY e.grado, e.seccion, e.apellido, e.nombre";
+                    WHERE u.rol = 'estudiante'";
+            
+            // Si includeInactive es false, filtrar solo activos
+            if (!$includeInactive) {
+                $sql .= " AND u.estado = 'activo' AND e.estado = 'activo'";
+            }
+            
+            $sql .= " ORDER BY e.fecha_creacion DESC, e.grado, e.seccion, e.apellido, e.nombre";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute();

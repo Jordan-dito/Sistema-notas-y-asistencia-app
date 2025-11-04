@@ -288,8 +288,13 @@ class AuthController {
             return;
         }
         
+        // Obtener parámetro opcional (por defecto true - incluir inactivos)
+        $includeInactive = isset($_GET['include_inactive']) 
+            ? filter_var($_GET['include_inactive'], FILTER_VALIDATE_BOOLEAN) 
+            : true;
+        
         // Obtener estudiantes
-        $result = $this->userModel->getAllStudents();
+        $result = $this->userModel->getAllStudents($includeInactive);
         
         if ($result['success']) {
             $this->sendResponse(200, $result);
