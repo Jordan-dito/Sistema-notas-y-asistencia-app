@@ -237,6 +237,116 @@ class MaterialReforzamientoController {
     }
     
     /**
+     * Obtener datos de un estudiante
+     */
+    public function getEstudianteData() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido'
+            ]);
+            return;
+        }
+        
+        if (!isset($_GET['estudiante_id']) || empty($_GET['estudiante_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'ID del estudiante es requerido'
+            ]);
+            return;
+        }
+        
+        $estudianteId = intval($_GET['estudiante_id']);
+        
+        require_once '../models/User.php';
+        $userModel = new User();
+        
+        $result = $userModel->getStudentById($estudianteId);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $statusCode = ($result['message'] == 'Estudiante no encontrado') ? 404 : 500;
+            $this->sendResponse($statusCode, $result);
+        }
+    }
+    
+    /**
+     * Actualizar datos de un estudiante
+     */
+    public function updateEstudianteData() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use PUT'
+            ]);
+            return;
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($input['estudiante_id']) || empty($input['estudiante_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'ID del estudiante es requerido'
+            ]);
+            return;
+        }
+        
+        $estudianteId = $input['estudiante_id'];
+        
+        // Validar campos requeridos
+        $requiredFields = ['nombre', 'apellido', 'grado', 'seccion'];
+        foreach ($requiredFields as $field) {
+            if (!isset($input[$field]) || empty(trim($input[$field]))) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'message' => "El campo $field es requerido"
+                ]);
+                return;
+            }
+        }
+        
+        $studentData = [
+            'nombre' => trim($input['nombre']),
+            'apellido' => trim($input['apellido']),
+            'grado' => trim($input['grado']),
+            'seccion' => trim($input['seccion']),
+            'telefono' => $input['telefono'] ?? null,
+            'direccion' => $input['direccion'] ?? null,
+            'fecha_nacimiento' => $input['fecha_nacimiento'] ?? null
+        ];
+        
+        require_once '../models/User.php';
+        $userModel = new User();
+        
+        // Validar estudiante duplicado (excluyendo el actual)
+        $validacion_estudiante = $userModel->validarEstudianteDuplicado(
+            $studentData['nombre'], 
+            $studentData['apellido'],
+            $studentData['grado'],
+            $studentData['seccion'],
+            $estudianteId
+        );
+        
+        if ($validacion_estudiante['existe']) {
+            $this->sendResponse(409, [
+                'success' => false,
+                'message' => $validacion_estudiante['mensaje']
+            ]);
+            return;
+        }
+        
+        $result = $userModel->updateStudent($estudianteId, $studentData);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $this->sendResponse(500, $result);
+        }
+    }
+    
+    /**
      * Enviar respuesta JSON
      */
     private function sendResponse($statusCode, $data) {

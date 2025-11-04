@@ -7,7 +7,7 @@
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 // Manejar preflight requests
@@ -45,6 +45,14 @@ try {
             $controller->eliminarMaterial();
             break;
             
+        case 'get-estudiante':
+            $controller->getEstudianteData();
+            break;
+            
+        case 'update-estudiante':
+            $controller->updateEstudianteData();
+            break;
+            
         default:
             http_response_code(404);
             echo json_encode([
@@ -55,7 +63,9 @@ try {
                     'obtener_estudiante' => 'GET - Obtener material para estudiante reprobado',
                     'estudiantes_reprobados' => 'GET - Obtener lista de estudiantes reprobados (profesor)',
                     'material_por_estudiante' => 'GET - Obtener material de un estudiante específico (profesor)',
-                    'eliminar' => 'DELETE - Eliminar material de reforzamiento'
+                    'eliminar' => 'DELETE - Eliminar material de reforzamiento',
+                    'get-estudiante' => 'GET - Obtener datos de un estudiante por ID',
+                    'update-estudiante' => 'PUT - Actualizar datos de un estudiante'
                 ]
             ], JSON_UNESCAPED_UNICODE);
             break;

@@ -125,15 +125,6 @@ class AuthController {
             return;
         }
         
-        // Verificar si email ya existe
-        if ($this->userModel->emailExists($email)) {
-            $this->sendResponse(409, [
-                'success' => false,
-                'message' => 'El email ya está registrado'
-            ]);
-            return;
-        }
-        
         // Validar datos específicos según el rol
         $userData = $this->validateUserData($rol, $input);
         if (!$userData['valid']) {
@@ -142,6 +133,38 @@ class AuthController {
                 'message' => $userData['message']
             ]);
             return;
+        }
+        
+        // ============================================
+        // VALIDACIÓN: Email duplicado (mejorado)
+        // ============================================
+        $validacion_email = $this->userModel->validarEmailDuplicado($email);
+        if ($validacion_email['existe']) {
+            $this->sendResponse(409, [
+                'success' => false,
+                'message' => $validacion_email['mensaje']
+            ]);
+            return;
+        }
+        
+        // ============================================
+        // VALIDACIÓN: Estudiante duplicado (solo para estudiantes)
+        // Valida nombre + apellido + grado + sección
+        // ============================================
+        if ($rol === 'estudiante') {
+            $nombre = $userData['data']['nombre'];
+            $apellido = $userData['data']['apellido'];
+            $grado = $userData['data']['grado'];
+            $seccion = $userData['data']['seccion'];
+            
+            $validacion_estudiante = $this->userModel->validarEstudianteDuplicado($nombre, $apellido, $grado, $seccion);
+            if ($validacion_estudiante['existe']) {
+                $this->sendResponse(409, [
+                    'success' => false,
+                    'message' => $validacion_estudiante['mensaje']
+                ]);
+                return;
+            }
         }
         
         // Registrar usuario
@@ -347,6 +370,25 @@ class AuthController {
             'direccion' => $input['direccion'] ?? null,
             'fecha_nacimiento' => $input['fecha_nacimiento'] ?? null
         ];
+        
+        // ============================================
+        // VALIDACIÓN: Estudiante duplicado (excluyendo el estudiante actual)
+        // Valida nombre + apellido + grado + sección
+        // ============================================
+        $validacion_estudiante = $this->userModel->validarEstudianteDuplicado(
+            $studentData['nombre'], 
+            $studentData['apellido'],
+            $studentData['grado'],
+            $studentData['seccion'],
+            $estudianteId
+        );
+        if ($validacion_estudiante['existe']) {
+            $this->sendResponse(409, [
+                'success' => false,
+                'message' => $validacion_estudiante['mensaje']
+            ]);
+            return;
+        }
         
         // Actualizar estudiante
         $result = $this->userModel->updateStudent($estudianteId, $studentData);

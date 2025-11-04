@@ -165,16 +165,163 @@ class User {
     }
     
     /**
-     * Verificar si email existe
+     * Verificar si email existe (case-insensitive)
      */
     public function emailExists($email) {
         try {
-            $sql = "SELECT COUNT(*) FROM usuarios WHERE email = ?";
+            $email_normalizado = trim(strtolower($email));
+            $sql = "SELECT COUNT(*) FROM usuarios WHERE LOWER(TRIM(email)) = ?";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$email]);
+            $stmt->execute([$email_normalizado]);
             return $stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
             return false;
+        }
+    }
+    
+    /**
+     * Valida si ya existe un estudiante con el mismo nombre, apellido, grado y sección
+     * @param string $nombre Nombre del estudiante
+     * @param string $apellido Apellido del estudiante
+     * @param string $grado Grado del estudiante
+     * @param string $seccion Sección del estudiante
+     * @param int|null $excluir_id ID del estudiante a excluir (útil para actualizaciones)
+     * @return array Array con 'existe' (bool), 'mensaje' (string) y opcionalmente 'estudiante_id' (int)
+     */
+    public function validarEstudianteDuplicado($nombre, $apellido, $grado = null, $seccion = null, $excluir_id = null) {
+        try {
+            $nombre_normalizado = trim(strtolower($nombre));
+            $apellido_normalizado = trim(strtolower($apellido));
+            
+            // Si se proporcionan grado y sección, validar que no exista en el mismo grado/sección
+            // Si no se proporcionan, validar solo por nombre y apellido (más restrictivo)
+            if ($grado !== null && $seccion !== null) {
+                $grado_normalizado = trim($grado);
+                $seccion_normalizado = trim(strtoupper($seccion));
+                
+                $sql = "SELECT id, nombre, apellido, grado, seccion, estado 
+                        FROM estudiantes 
+                        WHERE LOWER(TRIM(nombre)) = ? 
+                        AND LOWER(TRIM(apellido)) = ?
+                        AND TRIM(grado) = ?
+                        AND UPPER(TRIM(seccion)) = ?";
+                
+                $params = [$nombre_normalizado, $apellido_normalizado, $grado_normalizado, $seccion_normalizado];
+                
+                if ($excluir_id !== null) {
+                    $sql .= " AND id != ?";
+                    $params[] = $excluir_id;
+                }
+                
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($params);
+                $result = $stmt->fetch();
+                
+                if ($result) {
+                    $estado = $result['estado'];
+                    $nombre_original = $result['nombre'];
+                    $apellido_original = $result['apellido'];
+                    $grado_original = $result['grado'];
+                    $seccion_original = $result['seccion'];
+                    $mensaje = $estado === 'activo' 
+                        ? "Ya existe un estudiante activo con el nombre '$nombre_original $apellido_original' en el $grado_original sección $seccion_original"
+                        : "Ya existe un estudiante inactivo con el nombre '$nombre_original $apellido_original' en el $grado_original sección $seccion_original (ID: {$result['id']})";
+                    
+                    return [
+                        'existe' => true,
+                        'mensaje' => $mensaje,
+                        'estudiante_id' => $result['id']
+                    ];
+                }
+            } else {
+                // Validación más restrictiva: solo nombre y apellido (sin grado/sección)
+                $sql = "SELECT id, nombre, apellido, estado 
+                        FROM estudiantes 
+                        WHERE LOWER(TRIM(nombre)) = ? 
+                        AND LOWER(TRIM(apellido)) = ?";
+                
+                $params = [$nombre_normalizado, $apellido_normalizado];
+                
+                if ($excluir_id !== null) {
+                    $sql .= " AND id != ?";
+                    $params[] = $excluir_id;
+                }
+                
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($params);
+                $result = $stmt->fetch();
+                
+                if ($result) {
+                    $estado = $result['estado'];
+                    $nombre_original = $result['nombre'];
+                    $apellido_original = $result['apellido'];
+                    $mensaje = $estado === 'activo' 
+                        ? "Ya existe un estudiante activo con el nombre '$nombre_original $apellido_original'"
+                        : "Ya existe un estudiante inactivo con el nombre '$nombre_original $apellido_original' (ID: {$result['id']})";
+                    
+                    return [
+                        'existe' => true,
+                        'mensaje' => $mensaje,
+                        'estudiante_id' => $result['id']
+                    ];
+                }
+            }
+            
+            return [
+                'existe' => false,
+                'mensaje' => 'Estudiante único'
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'existe' => false,
+                'mensaje' => 'Error al validar estudiante: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Valida si ya existe un usuario con el mismo email (mejorado)
+     * @param string $email Email a validar
+     * @param int|null $excluir_id ID del usuario a excluir (útil para actualizaciones)
+     * @return array Array con 'existe' (bool) y 'mensaje' (string)
+     */
+    public function validarEmailDuplicado($email, $excluir_id = null) {
+        try {
+            $email_normalizado = trim(strtolower($email));
+            
+            $sql = "SELECT id, email, rol, estado 
+                    FROM usuarios 
+                    WHERE LOWER(TRIM(email)) = ?";
+            
+            $params = [$email_normalizado];
+            
+            if ($excluir_id !== null) {
+                $sql .= " AND id != ?";
+                $params[] = $excluir_id;
+            }
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $result = $stmt->fetch();
+            
+            if ($result) {
+                return [
+                    'existe' => true,
+                    'mensaje' => "El email '$email' ya está registrado en el sistema"
+                ];
+            }
+            
+            return [
+                'existe' => false,
+                'mensaje' => 'Email único'
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'existe' => false,
+                'mensaje' => 'Error al validar email: ' . $e->getMessage()
+            ];
         }
     }
     
@@ -253,6 +400,55 @@ class User {
             return [
                 'success' => false,
                 'message' => 'Error al obtener estudiantes: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Obtener datos de un estudiante por ID
+     */
+    public function getStudentById($estudianteId) {
+        try {
+            $sql = "SELECT 
+                        u.id as user_id,
+                        u.email,
+                        u.rol,
+                        u.estado as user_estado,
+                        e.id as estudiante_id,
+                        e.nombre,
+                        e.apellido,
+                        e.grado,
+                        e.seccion,
+                        e.telefono,
+                        e.direccion,
+                        e.fecha_nacimiento,
+                        e.estado as estudiante_estado,
+                        e.fecha_creacion
+                    FROM usuarios u
+                    INNER JOIN estudiantes e ON u.id = e.usuario_id
+                    WHERE e.id = ? AND e.estado = 'activo'";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$estudianteId]);
+            $student = $stmt->fetch();
+            
+            if ($student) {
+                return [
+                    'success' => true,
+                    'message' => 'Estudiante obtenido exitosamente',
+                    'data' => $student
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Estudiante no encontrado'
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al obtener estudiante: ' . $e->getMessage()
             ];
         }
     }
