@@ -261,6 +261,208 @@ class MaterialReforzamiento {
     }
     
     /**
+     * Obtener un material de reforzamiento por ID
+     */
+    public function obtenerMaterialPorId($materialId, $profesorId = null) {
+        try {
+            $sql = "SELECT 
+                        mr.id,
+                        mr.materia_id,
+                        mr.estudiante_id,
+                        mr.profesor_id,
+                        mr.año_academico,
+                        mr.titulo,
+                        mr.descripcion,
+                        mr.tipo_contenido,
+                        mr.contenido,
+                        mr.url_externa,
+                        mr.fecha_publicacion,
+                        mr.fecha_vencimiento,
+                        mr.estado,
+                        m.nombre as nombre_materia,
+                        CONCAT(p.nombre, ' ', p.apellido) as nombre_profesor
+                    FROM material_reforzamiento mr
+                    JOIN materias m ON mr.materia_id = m.id
+                    JOIN profesores p ON mr.profesor_id = p.id
+                    WHERE mr.id = ?";
+            
+            $params = [$materialId];
+            
+            // Si se proporciona profesor_id, validar que el material pertenece al profesor
+            if ($profesorId !== null) {
+                $sql .= " AND mr.profesor_id = ?";
+                $params[] = $profesorId;
+            }
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $material = $stmt->fetch();
+            
+            if ($material) {
+                return [
+                    'success' => true,
+                    'message' => 'Material obtenido correctamente',
+                    'data' => $material
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Material no encontrado o no tienes permisos'
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error de base de datos: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Actualizar material de reforzamiento
+     */
+    public function actualizarMaterial($materialId, $profesorId, $data) {
+        try {
+            // Verificar que el material pertenece al profesor
+            $sqlCheck = "SELECT id, materia_id, estudiante_id FROM material_reforzamiento 
+                        WHERE id = ? AND profesor_id = ?";
+            $stmtCheck = $this->db->prepare($sqlCheck);
+            $stmtCheck->execute([$materialId, $profesorId]);
+            $material = $stmtCheck->fetch();
+            
+            if (!$material) {
+                return [
+                    'success' => false,
+                    'message' => 'Material no encontrado o no tienes permisos'
+                ];
+            }
+            
+            // Validar que el estudiante sigue reprobado si es material específico y se cambia estudiante_id
+            $estudianteId = $data['estudiante_id'] ?? $material['estudiante_id'];
+            $materiaId = $data['materia_id'] ?? $material['materia_id'];
+            $añoAcademico = $data['año_academico'] ?? date('Y');
+            
+            if ($estudianteId !== null) {
+                $sqlCheckNota = "SELECT promedio FROM notas 
+                                WHERE estudiante_id = ? AND materia_id = ? AND año_academico = ? AND estado = 'activo'";
+                $stmtCheckNota = $this->db->prepare($sqlCheckNota);
+                $stmtCheckNota->execute([$estudianteId, $materiaId, $añoAcademico]);
+                $nota = $stmtCheckNota->fetch();
+                
+                if (!$nota || ($nota['promedio'] !== null && $nota['promedio'] >= 60)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Este estudiante no está reprobado. El material de reforzamiento es solo para estudiantes reprobados.'
+                    ];
+                }
+            }
+            
+            // Construir UPDATE dinámicamente
+            $sql = "UPDATE material_reforzamiento SET ";
+            $params = [];
+            $updates = [];
+            
+            if (isset($data['titulo'])) {
+                $updates[] = "titulo = ?";
+                $params[] = trim($data['titulo']);
+            }
+            
+            if (isset($data['descripcion'])) {
+                $updates[] = "descripcion = ?";
+                $params[] = trim($data['descripcion']);
+            }
+            
+            if (isset($data['tipo_contenido'])) {
+                // Validar tipo de contenido
+                if (!in_array($data['tipo_contenido'], ['texto', 'link'])) {
+                    return [
+                        'success' => false,
+                        'message' => 'Tipo de contenido inválido. Solo se permite: texto o link'
+                    ];
+                }
+                $updates[] = "tipo_contenido = ?";
+                $params[] = $data['tipo_contenido'];
+            }
+            
+            if (isset($data['contenido'])) {
+                $updates[] = "contenido = ?";
+                $params[] = $data['contenido'];
+            }
+            
+            if (isset($data['url_externa'])) {
+                $updates[] = "url_externa = ?";
+                $params[] = trim($data['url_externa']);
+            }
+            
+            if (isset($data['estudiante_id'])) {
+                $updates[] = "estudiante_id = ?";
+                $params[] = $data['estudiante_id'] !== '' ? $data['estudiante_id'] : null;
+            }
+            
+            if (isset($data['fecha_vencimiento'])) {
+                $updates[] = "fecha_vencimiento = ?";
+                $params[] = $data['fecha_vencimiento'] !== '' ? $data['fecha_vencimiento'] : null;
+            }
+            
+            if (empty($updates)) {
+                return [
+                    'success' => false,
+                    'message' => 'No se proporcionaron campos para actualizar'
+                ];
+            }
+            
+            $sql .= implode(", ", $updates);
+            $sql .= " WHERE id = ? AND profesor_id = ?";
+            $params[] = $materialId;
+            $params[] = $profesorId;
+            
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($params);
+            
+            if ($result) {
+                // Obtener el material actualizado
+                $sqlGet = "SELECT 
+                            mr.id,
+                            mr.materia_id,
+                            mr.estudiante_id,
+                            mr.profesor_id,
+                            mr.año_academico,
+                            mr.titulo,
+                            mr.descripcion,
+                            mr.tipo_contenido,
+                            mr.contenido,
+                            mr.url_externa,
+                            mr.fecha_publicacion,
+                            mr.fecha_vencimiento,
+                            mr.estado
+                        FROM material_reforzamiento mr
+                        WHERE mr.id = ?";
+                $stmtGet = $this->db->prepare($sqlGet);
+                $stmtGet->execute([$materialId]);
+                $materialActualizado = $stmtGet->fetch();
+                
+                return [
+                    'success' => true,
+                    'message' => 'Material actualizado correctamente',
+                    'data' => $materialActualizado
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Error al actualizar el material'
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Error de base de datos: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
      * Eliminar material de reforzamiento
      */
     public function eliminarMaterial($materialId, $profesorId) {

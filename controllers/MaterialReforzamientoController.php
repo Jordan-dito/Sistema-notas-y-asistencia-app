@@ -201,6 +201,168 @@ class MaterialReforzamientoController {
     }
     
     /**
+     * Obtener material de reforzamiento por ID
+     */
+    public function obtenerMaterialPorId() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use GET'
+            ]);
+            return;
+        }
+        
+        // Obtener parámetros
+        if (!isset($_GET['material_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'material_id es requerido'
+            ]);
+            return;
+        }
+        
+        $materialId = intval($_GET['material_id']);
+        $profesorId = isset($_GET['profesor_id']) ? intval($_GET['profesor_id']) : null;
+        
+        // Obtener material
+        $result = $this->materialModel->obtenerMaterialPorId($materialId, $profesorId);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $statusCode = strpos($result['message'], 'no encontrado') !== false || 
+                         strpos($result['message'], 'permisos') !== false ? 404 : 500;
+            $this->sendResponse($statusCode, $result);
+        }
+    }
+    
+    /**
+     * Actualizar material de reforzamiento
+     */
+    public function editarMaterial() {
+        // Verificar método HTTP
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            $this->sendResponse(405, [
+                'success' => false,
+                'message' => 'Método no permitido. Use PUT'
+            ]);
+            return;
+        }
+        
+        // Obtener datos del request (JSON)
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if ($input === null) {
+            // Si no es JSON, intentar con $_POST (form-data)
+            $input = $_POST;
+        }
+        
+        // Validar campos requeridos
+        if (!isset($input['material_id']) || empty($input['material_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'material_id es requerido'
+            ]);
+            return;
+        }
+        
+        if (!isset($input['profesor_id']) || empty($input['profesor_id'])) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'message' => 'profesor_id es requerido'
+            ]);
+            return;
+        }
+        
+        $materialId = intval($input['material_id']);
+        $profesorId = intval($input['profesor_id']);
+        
+        // Preparar datos para actualizar (solo los campos que se envíen)
+        $data = [];
+        
+        if (isset($input['titulo'])) {
+            $data['titulo'] = trim($input['titulo']);
+        }
+        
+        if (isset($input['descripcion'])) {
+            $data['descripcion'] = trim($input['descripcion']);
+        }
+        
+        if (isset($input['tipo_contenido'])) {
+            // Validar tipo de contenido
+            if (!in_array($input['tipo_contenido'], ['texto', 'link'])) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'message' => 'Tipo de contenido inválido. Solo se permite: texto o link'
+                ]);
+                return;
+            }
+            $data['tipo_contenido'] = $input['tipo_contenido'];
+            
+            // Validar campos requeridos según el tipo
+            if ($input['tipo_contenido'] === 'link') {
+                if (!isset($input['url_externa']) || empty(trim($input['url_externa']))) {
+                    $this->sendResponse(400, [
+                        'success' => false,
+                        'message' => 'url_externa es requerida para tipo link'
+                    ]);
+                    return;
+                }
+            }
+            
+            if ($input['tipo_contenido'] === 'texto') {
+                if (!isset($input['contenido']) || empty(trim($input['contenido']))) {
+                    $this->sendResponse(400, [
+                        'success' => false,
+                        'message' => 'contenido es requerido para tipo texto'
+                    ]);
+                    return;
+                }
+            }
+        }
+        
+        if (isset($input['contenido'])) {
+            $data['contenido'] = $input['contenido'];
+        }
+        
+        if (isset($input['url_externa'])) {
+            $data['url_externa'] = trim($input['url_externa']);
+        }
+        
+        if (isset($input['estudiante_id'])) {
+            $data['estudiante_id'] = $input['estudiante_id'] !== '' && $input['estudiante_id'] !== null 
+                ? intval($input['estudiante_id']) 
+                : null;
+        }
+        
+        if (isset($input['fecha_vencimiento'])) {
+            $data['fecha_vencimiento'] = $input['fecha_vencimiento'] !== '' && $input['fecha_vencimiento'] !== null
+                ? $input['fecha_vencimiento']
+                : null;
+        }
+        
+        if (isset($input['año_academico'])) {
+            $data['año_academico'] = $input['año_academico'];
+        }
+        
+        if (isset($input['materia_id'])) {
+            $data['materia_id'] = intval($input['materia_id']);
+        }
+        
+        // Actualizar material
+        $result = $this->materialModel->actualizarMaterial($materialId, $profesorId, $data);
+        
+        if ($result['success']) {
+            $this->sendResponse(200, $result);
+        } else {
+            $statusCode = strpos($result['message'], 'no encontrado') !== false || 
+                         strpos($result['message'], 'permisos') !== false ? 404 : 500;
+            $this->sendResponse($statusCode, $result);
+        }
+    }
+    
+    /**
      * Eliminar material de reforzamiento
      */
     public function eliminarMaterial() {

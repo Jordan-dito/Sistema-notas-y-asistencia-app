@@ -45,6 +45,14 @@ try {
             $controller->eliminarMaterial();
             break;
             
+        case 'editar':
+            $controller->editarMaterial();
+            break;
+            
+        case 'obtener-por-id':
+            $controller->obtenerMaterialPorId();
+            break;
+            
         case 'get-estudiante':
             $controller->getEstudianteData();
             break;
@@ -64,6 +72,8 @@ try {
                     'estudiantes_reprobados' => 'GET - Obtener lista de estudiantes reprobados (profesor)',
                     'material_por_estudiante' => 'GET - Obtener material de un estudiante específico (profesor)',
                     'eliminar' => 'DELETE - Eliminar material de reforzamiento',
+                    'editar' => 'PUT - Editar material de reforzamiento (profesor)',
+                    'obtener-por-id' => 'GET - Obtener material de reforzamiento por ID',
                     'get-estudiante' => 'GET - Obtener datos de un estudiante por ID',
                     'update-estudiante' => 'PUT - Actualizar datos de un estudiante'
                 ]
